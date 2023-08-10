@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
+import "hardhat/console.sol";
 
 contract PetAdoption {
     address public owner;
     uint public petIndex = 0;
+    uint[] public allAdoptedPets;
+
+    mapping(uint => address) public petIdxToOwnerAddress;
+    mapping(address => uint[]) public ownerAddressToPetList;
 
     constructor(uint initialPetIndex) {
         owner = msg.sender;
@@ -18,7 +23,34 @@ contract PetAdoption {
         petIndex++;
     }
 
+    function adoptPet(uint adoptIdx) public {
+        require(adoptIdx < petIndex, "Pet index out of bounds!");
+        require(
+            petIdxToOwnerAddress[adoptIdx] == address(0),
+            "Pet is already adopted"
+        );
+
+        // console.log("Adopting Pet: ", adoptIdx);
+
+        petIdxToOwnerAddress[adoptIdx] = msg.sender;
+
+        // console.log("New Owner: ", petIdxToOwnerAddress[adoptIdx]);
+
+        ownerAddressToPetList[msg.sender].push(adoptIdx);
+        allAdoptedPets.push(adoptIdx);
+
+        // console.log("Pet: ", allAdoptedPets[0]);
+    }
+
     function getOwner() public view returns (address) {
         return owner;
+    }
+
+    function getAllAdoptedPetsByOwner() public view returns (uint[] memory) {
+        return ownerAddressToPetList[msg.sender];
+    }
+
+    function getAllAdoptedPets() public view returns (uint[] memory) {
+        return allAdoptedPets;
     }
 }
