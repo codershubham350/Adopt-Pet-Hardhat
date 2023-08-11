@@ -1,4 +1,4 @@
-export function PetItem({ pet }) {
+export function PetItem({ pet, adoptPet }) {
   return (
     <div className="item">
       <div className="image">
@@ -22,7 +22,9 @@ export function PetItem({ pet }) {
         </div>
       </div>
       <div className="action-menu">
-        <button className="action-button">Adopt</button>
+        <button className="action-button" onClick={adoptPet}>
+          Adopt
+        </button>
       </div>
     </div>
   );
