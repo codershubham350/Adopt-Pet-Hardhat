@@ -8,14 +8,19 @@ import { ConnectWallet } from "./components/ConnectWallet";
 import { ethers } from "ethers";
 import contractAddress from "./contracts/contract-address-localhost.json";
 import PetAdoptionArtifact from "./contracts/PetAdoption.json";
+import { TxInfo } from "./components/TxInfo";
 
 const HARDHAT_NETWORK_ID = parseInt(process.env.REACT_APP_NETWORK_ID);
 
 function Dapp() {
   const [pets, setPets] = useState([]);
+  const [adoptedPets, setAdoptedPets] = useState([]);
+  const [ownedPets, setOwnedPets] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(undefined);
   const [contract, setContract] = useState(undefined);
-  const [adoptedPets, setAdoptedPets] = useState([]);
+  const [txError, setTxError] = useState(undefined);
+  const [txInfo, setTxInfo] = useState(undefined);
+  const [view, setView] = useState("home");
 
   useEffect(() => {
     async function fetchPets() {
@@ -37,8 +42,12 @@ function Dapp() {
       await window.ethereum.on("accountsChanged", ([newAddress]) => {
         if (newAddress === undefined) {
           setAdoptedPets([]);
+          setOwnedPets([]);
           setSelectedAddress(undefined);
           setContract(undefined);
+          setTxError(undefined);
+          setTxInfo(undefined);
+          setView("home");
           return;
         }
         initializeDapp(newAddress);
@@ -71,6 +80,7 @@ function Dapp() {
       const adoptedPets = await contract.getAllAdoptedPets();
 
       if (adoptedPets.length > 0) {
+        // console.log(adoptedPets); // Getting Big Number data which we have to convert it to Number or parse it to INT
         setAdoptedPets(adoptedPets.map((petIdx) => parseInt(petIdx))); // Big Number to Number
       } else {
         setAdoptedPets([]);
@@ -84,16 +94,22 @@ function Dapp() {
   async function adoptPet(id) {
     try {
       const tx = await contract.adoptPet(id);
+      setTxInfo(tx.hash);
       const receipt = await tx.wait();
+
+      await new Promise((res) => setTimeout(res, 2000));
 
       if (receipt.status === 0) {
         throw new Error("Transaction failed!");
       }
 
+      // alert(`Pet with id: ${id} has been adopted`);
       setAdoptedPets([...adoptedPets, id]);
-      alert(`Pet with id: ${id} has been adopted`);
+      setOwnedPets([...ownedPets, id]);
     } catch (error) {
-      console.error(error.reason);
+      setTxError(error?.reason || error?.message);
+    } finally {
+      setTxInfo(undefined);
     }
   }
 
@@ -123,16 +139,24 @@ function Dapp() {
   }
   return (
     <div className="container">
-      <TxError />
-      {JSON.stringify(adoptedPets)}
+      {txInfo && <TxInfo message={txInfo} />}
+      {txError && (
+        <TxError message={txError} dismiss={() => setTxError(undefined)} />
+      )}
       <br />
-      <Navbar address={selectedAddress} />
+      <Navbar setView={setView} address={selectedAddress} />
       <div className="items">
-        {pets.map((pet) => (
-          <div key={pet.id}>
-            <PetItem pet={pet} key={pet.id} adoptPet={() => adoptPet(pet.id)} />
-          </div>
-        ))}
+        {view === "home"
+          ? pets.map((pet) => (
+              <PetItem
+                pet={pet}
+                key={pet.id}
+                inProgress={!!txInfo}
+                adoptPet={() => adoptPet(pet.id)}
+                disabled={adoptedPets.includes(pet.id)}
+              />
+            ))
+          : JSON.stringify(ownedPets)}
       </div>
     </div>
   );
