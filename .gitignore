@@ -5,4 +5,7 @@ keys.json
 artifacts
 cache
 
+.env
+.env.development
+
 
