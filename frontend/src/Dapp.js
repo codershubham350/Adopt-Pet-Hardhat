@@ -6,7 +6,7 @@ import { WalletNotDetected } from "./components/WalletNotDetected";
 import { ConnectWallet } from "./components/ConnectWallet";
 
 import { ethers } from "ethers";
-import contractAddress from "./contracts/contract-address-localhost.json";
+import { contractAddress } from "./address";
 import PetAdoptionArtifact from "./contracts/PetAdoption.json";
 import { TxInfo } from "./components/TxInfo";
 
@@ -78,12 +78,19 @@ function Dapp() {
   async function getAdoptedPets(contract) {
     try {
       const adoptedPets = await contract.getAllAdoptedPets();
+      const ownedPets = await contract.getAllAdoptedPetsByOwner();
 
       if (adoptedPets.length > 0) {
         // console.log(adoptedPets); // Getting Big Number data which we have to convert it to Number or parse it to INT
         setAdoptedPets(adoptedPets.map((petIdx) => parseInt(petIdx))); // Big Number to Number
       } else {
         setAdoptedPets([]);
+      }
+
+      if (ownedPets.length > 0) {
+        setOwnedPets(ownedPets.map((petIdx) => parseInt(petIdx))); // Big Number to Number
+      } else {
+        setOwnedPets([]);
       }
       // console.log(adoptedPets);
     } catch (error) {
@@ -97,7 +104,7 @@ function Dapp() {
       setTxInfo(tx.hash);
       const receipt = await tx.wait();
 
-      await new Promise((res) => setTimeout(res, 2000));
+      //await new Promise((res) => setTimeout(res, 2000));
 
       if (receipt.status === 0) {
         throw new Error("Transaction failed!");
@@ -156,7 +163,16 @@ function Dapp() {
                 disabled={adoptedPets.includes(pet.id)}
               />
             ))
-          : JSON.stringify(ownedPets)}
+          : pets
+              .filter((pet) => ownedPets.includes(pet.id))
+              .map((pet) => (
+                <PetItem
+                  pet={pet}
+                  key={pet.id}
+                  adoptPet={() => {}}
+                  disabled={true}
+                />
+              ))}
       </div>
     </div>
   );

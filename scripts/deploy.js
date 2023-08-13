@@ -14,9 +14,11 @@ async function main() {
   const PetAdoption = await hre.ethers.getContractFactory("PetAdoption");
   const contract = await PetAdoption.deploy(PETS_COUNT);
 
-  await contract.waitForDeployment();
+  //await contract.waitForDeployment(); -> for Hardhat
+  await contract.deployed();
 
-  console.log(`PetAdoption deployed to: ${contract.target}`);
+  //  console.log(`PetAdoption deployed to: ${contract.target}`); -> for Hardhat
+  console.log(`PetAdoption deployed to: ${contract.address}`);
 
   saveContractFiles(contract);
 }
@@ -36,8 +38,13 @@ function saveContractFiles(contract) {
 
   fs.writeFileSync(
     path.join(contractDir, `contract-address-${network.name}.json`),
-    JSON.stringify({ PetAdoption: contract.target }, null, 2)
+    JSON.stringify({ PetAdoption: contract.address }, null, 2)
   );
+
+  // fs.writeFileSync(
+  //     path.join(contractDir, `contract-address-${network.name}.json`),
+  //     JSON.stringify({ PetAdoption: contract.target }, null, 2) -> for Hardhat
+  //   );
 
   const PetAdoptionArtifact = artifacts.readArtifactSync("PetAdoption");
 
@@ -53,3 +60,4 @@ main().catch((error) => {
 });
 
 // npx hardhat run scripts/deploy.js --network localhost
+// npx hardhat run scripts/deploy.js --network polygon_mumbai
